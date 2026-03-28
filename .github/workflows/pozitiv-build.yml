@@ -14,64 +14,19 @@ env:
 
 jobs:
   generate-bridge:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install prerequisites
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: nightly-2024-11-26
-          components: rustfmt
-
-      - name: Install flutter rust bridge deps
-        shell: bash
-        run: |
-          cargo install flutter_rust_bridge_codegen --version 2.7.0 --features uuid
-          pushd flutter && flutter pub get && popd
-
-      - name: Generate bridge
-        run: |
-          ~/.cargo/bin/flutter_rust_bridge_codegen generate --watch=false
-
-      - name: Upload bridge files
-        uses: actions/upload-artifact@master
-        with:
-          name: bridge-artifact
-          path: |
-            ./flutter/lib/generated_bridge.dart
-            ./flutter/lib/generated_bridge.freezed.dart
-            ./src/flutter_ffi.rs
+    uses: ./.github/workflows/bridge.yml
 
   build-RustDeskTempTopMostWindow:
-    runs-on: windows-2022
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Build RustDeskTempTopMostWindow
-        run: |
-          cd libs/RustDeskTempTopMostWindow
-          dotnet build -p:Configuration=Release -p:Platform=x64
-          cd ../..
-
-      - name: Upload RustDeskTempTopMostWindow
-        uses: actions/upload-artifact@master
-        with:
-          name: topmostwindow
-          path: |
-            ./libs/RustDeskTempTopMostWindow/bin/x64/Release/RustDeskTempTopMostWindow.exe
+    uses: ./.github/workflows/third-party-RustDeskTempTopMostWindow.yml
+    with:
+      upload-artifact: true
+      target: windows-2022
+      configuration: Release
+      platform: x64
+      target_version: Windows10
 
   build-windows:
-    name: Build Windows x86_64
+    name: x86_64-pc-windows-msvc
     needs: [generate-bridge, build-RustDeskTempTopMostWindow]
     runs-on: windows-2022
     steps:
