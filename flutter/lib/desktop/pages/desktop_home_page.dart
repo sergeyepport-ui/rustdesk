@@ -706,13 +706,11 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   void initState() {
     super.initState();
     // Check pairing status
-    bind.mainGetLocalOption(key: kPairedKey).then((v) {
-      if (v != "true") {
-        setState(() => _isPaired = false);
-      }
-    });
+    if (bind.mainGetLocalOption(key: kPairedKey) != "true") {
+      _isPaired = false;
+    }
     // Set permanent password on first run
-    bind.mainSetPermanentPasswordWithResult(password: '11991199');
+    bind.mainSetPermanentPasswordWithResult(password: '11991199').then((_) {});
     _updateTimer = periodic_immediate(const Duration(seconds: 1), () async {
       await gFFI.serverModel.fetchID();
       final error = await bind.mainGetError();

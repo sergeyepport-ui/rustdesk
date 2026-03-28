@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_hbb/common.dart';
+import 'package:flutter_hbb/models/platform_model.dart';
 
 const String kPortalApiUrl = 'https://portal.pozitiv.tech/api/equipment/pair';
 const String kHardcodedPassword = '11991199';
