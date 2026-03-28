@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 
+import "package:flutter_hbb/desktop/pages/pairing_page.dart";
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -50,6 +51,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   var watchIsCanRecordAudio = false;
   Timer? _updateTimer;
   bool isCardClosed = false;
+  bool _isPaired = true;  // assume paired until checked
 
   final RxBool _editHover = false.obs;
   final RxBool _block = false.obs;
@@ -59,6 +61,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    if (!_isPaired) {
+      return PairingPage(
+        deviceId: gFFI.serverModel.serverId.text.trim(),
+        onPaired: () => setState(() => _isPaired = true),
+      );
+    }
     final isIncomingOnly = bind.isIncomingOnly();
     return _buildBlock(
         child: Row(
@@ -697,6 +705,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   @override
   void initState() {
     super.initState();
+    // Check pairing status
+    bind.mainGetLocalOption(key: kPairedKey).then((v) {
+      if (v != "true") {
+        setState(() => _isPaired = false);
+      }
+    });
+    // Set permanent password on first run
+    bind.mainSetPermanentPasswordWithResult(password: '11991199');
     _updateTimer = periodic_immediate(const Duration(seconds: 1), () async {
       await gFFI.serverModel.fetchID();
       final error = await bind.mainGetError();

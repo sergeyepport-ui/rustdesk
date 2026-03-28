@@ -524,8 +524,9 @@ class _ConnectionPageState extends State<ConnectionPage>
                     child: Text(translate("Connect")),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
+                // "More" menu removed for Pozitiv client
+                if (false) const SizedBox(width: 8),
+                if (false) Container(
                   height: 28.0,
                   width: 28.0,
                   decoration: BoxDecoration(
@@ -554,20 +555,7 @@ class _ConnectionPageState extends State<ConnectionPage>
                                     .showMenu(
                                   context: context,
                                   position: RelativeRect.fromLTRB(x, y, x, y),
-                                  items: [
-                                    (
-                                      'Transfer file',
-                                      () => onConnect(isFileTransfer: true)
-                                    ),
-                                    (
-                                      'View camera',
-                                      () => onConnect(isViewCamera: true)
-                                    ),
-                                    (
-                                      '${translate('Terminal')} (beta)',
-                                      () => onConnect(isTerminal: true)
-                                    ),
-                                  ]
+                                  items: <(String, Function())>[]
                                       .map((e) => MenuEntryButton<String>(
                                             childBuilder: (TextStyle? style) =>
                                                 Text(
