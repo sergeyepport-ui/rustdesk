@@ -133,13 +133,13 @@ jobs:
           python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/pozitiv-remote.exe
           popd
           mkdir -p ./installer
-          mv ./target/release/rustdesk-portable-packer.exe ./installer/pozitiv-remote.exe
+          mv ./target/release/rustdesk-portable-packer.exe ./installer/pozitiv-remote-install.exe
 
       - name: Upload installer
         uses: actions/upload-artifact@master
         with:
           name: pozitiv-remote-installer
-          path: ./installer/pozitiv-remote.exe
+          path: ./installer/pozitiv-remote-install.exe
 
       - name: Upload portable
         uses: actions/upload-artifact@master
