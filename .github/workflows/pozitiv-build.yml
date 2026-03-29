@@ -119,13 +119,18 @@ jobs:
           name: topmostwindow-artifacts
           path: ./rustdesk
 
+      - name: Rename exe to match APP_NAME
+        shell: bash
+        run: |
+          mv ./rustdesk/rustdesk.exe ./rustdesk/PozitivRemote.exe
+
       - name: Build self-extracted installer
         shell: bash
         run: |
           sed -i '/dpiAware/d' res/manifest.xml
           pushd ./libs/portable
           pip3 install -r requirements.txt
-          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe
+          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/PozitivRemote.exe
           popd
           mkdir -p ./installer
           mv ./target/release/rustdesk-portable-packer.exe ./installer/pozitiv-remote-install.exe
