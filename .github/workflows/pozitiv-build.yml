@@ -111,16 +111,38 @@ jobs:
       - name: Build rustdesk
         run: |
           python3 .\build.py --portable --hwcodec --flutter --vram --skip-portable-pack
-          mv ./flutter/build/windows/x64/runner/Release ./pozitiv-remote
+          mv ./flutter/build/windows/x64/runner/Release ./rustdesk
 
       - name: Restore RustDeskTempTopMostWindow
         uses: actions/download-artifact@master
         with:
           name: topmostwindow-artifacts
-          path: ./pozitiv-remote
+          path: ./rustdesk
 
-      - name: Upload artifact
+      - name: Rename exe
+        shell: bash
+        run: |
+          mv ./rustdesk/rustdesk.exe ./rustdesk/pozitiv-remote.exe
+
+      - name: Build self-extracted installer
+        shell: bash
+        run: |
+          sed -i '/dpiAware/d' res/manifest.xml
+          pushd ./libs/portable
+          pip3 install -r requirements.txt
+          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/pozitiv-remote.exe
+          popd
+          mkdir -p ./installer
+          mv ./target/release/rustdesk-portable-packer.exe ./installer/pozitiv-remote.exe
+
+      - name: Upload installer
         uses: actions/upload-artifact@master
         with:
-          name: pozitiv-remote-windows
-          path: ./pozitiv-remote
+          name: pozitiv-remote-installer
+          path: ./installer/pozitiv-remote.exe
+
+      - name: Upload portable
+        uses: actions/upload-artifact@master
+        with:
+          name: pozitiv-remote-portable
+          path: ./rustdesk
