@@ -116,7 +116,7 @@ jobs:
       - name: Restore RustDeskTempTopMostWindow
         uses: actions/download-artifact@master
         with:
-          name: topmostwindow
+          name: topmostwindow-artifacts
           path: ./pozitiv-remote
 
       - name: Upload artifact
