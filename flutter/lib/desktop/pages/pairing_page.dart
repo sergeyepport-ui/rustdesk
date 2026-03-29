@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,12 +11,10 @@ const String kHardcodedPassword = '11991199';
 const String kPairedKey = 'portal_paired';
 
 class PairingPage extends StatefulWidget {
-  final String deviceId;
   final VoidCallback onPaired;
 
   const PairingPage({
     Key? key,
-    required this.deviceId,
     required this.onPaired,
   }) : super(key: key);
 
@@ -28,11 +27,42 @@ class _PairingPageState extends State<PairingPage> {
   bool _loading = false;
   String? _error;
   String? _successName;
+  String _deviceId = '';
+  Timer? _idTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchId();
+    _idTimer = Timer.periodic(const Duration(seconds: 2), (_) => _fetchId());
+  }
+
+  void _fetchId() {
+    final id = gFFI.serverModel.serverId.text.trim();
+    if (id.isNotEmpty && id != _deviceId) {
+      setState(() => _deviceId = id);
+    }
+  }
+
+  @override
+  void dispose() {
+    _idTimer?.cancel();
+    _codeController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pair() async {
     final code = _codeController.text.trim();
     if (code.length != 6) {
       setState(() => _error = 'Введите 6-значный код');
+      return;
+    }
+
+    // Re-fetch ID right before pairing
+    _fetchId();
+
+    if (_deviceId.isEmpty) {
+      setState(() => _error = 'ID устройства ещё не получен, подождите...');
       return;
     }
 
@@ -47,7 +77,7 @@ class _PairingPageState extends State<PairingPage> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'pairing_code': code,
-          'rustdesk_id': widget.deviceId,
+          'rustdesk_id': _deviceId,
           'rustdesk_password': kHardcodedPassword,
         }),
       );
@@ -58,7 +88,7 @@ class _PairingPageState extends State<PairingPage> {
           _successName = (data['equipment_name'] ?? 'Устройство') as String;
           _loading = false;
         });
-        await bind.mainSetLocalOption(key: kPairedKey, value: 'true');
+        bind.mainSetLocalOption(key: kPairedKey, value: 'true');
         Future.delayed(const Duration(seconds: 2), widget.onPaired);
       } else {
         String detail = 'Ошибка привязки';
@@ -80,14 +110,9 @@ class _PairingPageState extends State<PairingPage> {
   }
 
   @override
-  void dispose() {
-    _codeController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final idText = widget.deviceId.isNotEmpty ? widget.deviceId : 'загрузка...';
+    final idText = _deviceId.isNotEmpty ? _deviceId : 'получение ID...';
+    final idReady = _deviceId.isNotEmpty;
     return Scaffold(
       backgroundColor: const Color(0xFF1a1a2e),
       body: Center(
@@ -108,7 +133,6 @@ class _PairingPageState extends State<PairingPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Logo
               Container(
                 width: 72,
                 height: 72,
@@ -157,13 +181,17 @@ class _PairingPageState extends State<PairingPage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.computer, size: 16, color: Colors.white38),
+                      Icon(
+                        idReady ? Icons.computer : Icons.hourglass_top,
+                        size: 16,
+                        color: idReady ? Colors.white38 : Colors.orange,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'ID: $idText',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white70,
+                          color: idReady ? Colors.white70 : Colors.orange,
                           fontFamily: 'monospace',
                         ),
                       ),
@@ -222,7 +250,7 @@ class _PairingPageState extends State<PairingPage> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _loading ? null : _pair,
+                    onPressed: (_loading || !idReady) ? null : _pair,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2196F3),
                       foregroundColor: Colors.white,
@@ -241,13 +269,16 @@ class _PairingPageState extends State<PairingPage> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Привязать', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        : Text(
+                            idReady ? 'Привязать' : 'Ожидание ID...',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextButton(
-                  onPressed: () async {
-                    await bind.mainSetLocalOption(key: kPairedKey, value: 'true');
+                  onPressed: () {
+                    bind.mainSetLocalOption(key: kPairedKey, value: 'true');
                     widget.onPaired();
                   },
                   child: const Text(

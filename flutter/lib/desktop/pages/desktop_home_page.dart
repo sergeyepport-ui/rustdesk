@@ -63,7 +63,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     super.build(context);
     if (!_isPaired) {
       return PairingPage(
-        deviceId: gFFI.serverModel.serverId.text.trim(),
         onPaired: () => setState(() => _isPaired = true),
       );
     }
